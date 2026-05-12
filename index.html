@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
+<!-- saved from url=(0029)https://aria-ap2p.vercel.app/ -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aria Technologies — Manufacturing Planner</title>
 <style>
@@ -19,6 +19,15 @@ body{font-family:Arial,sans-serif;background:#eef1f7;color:#1a1a2e;font-size:13p
 .hl .ht-input::placeholder{color:rgba(255,255,255,.35)}
 .hbtn{display:inline-flex;align-items:center;gap:6px;padding:7px 15px;font-size:12px;font-weight:600;border:none;border-radius:7px;cursor:pointer}
 .btn-print{background:#378ADD;color:#fff}.btn-print:hover{background:#185FA5}
+.btn-save{background:#059669;color:#fff}.btn-save:hover{background:#047857}
+.btn-save.saved{background:#34d399;color:#065f46}
+.btn-save.unsaved{background:#d97706;color:#fff}
+.save-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#fde68a;margin-right:5px;vertical-align:middle;box-shadow:0 0 0 0 rgba(253,230,138,.6);animation:pulse-dot 1.5s infinite}
+@keyframes pulse-dot{0%,100%{box-shadow:0 0 0 0 rgba(253,230,138,.6)}50%{box-shadow:0 0 0 5px rgba(253,230,138,0)}}
+.btn-save.saved .save-dot{background:#a7f3d0;animation:none;box-shadow:none}
+.tab-btn.view-all{background:linear-gradient(135deg,#0d1b4b,#185FA5);color:#fff;border-color:#185FA5}
+.tab-btn.view-all.active{background:linear-gradient(135deg,#185FA5,#378ADD);border-color:#378ADD}
+.plan-tab.view-all-plans{background:linear-gradient(135deg,#185FA5,#378ADD);color:#fff;border-color:#378ADD}
 
 .proj-tabs-wrap{background:#fff;border-radius:10px;padding:10px 16px;margin-bottom:10px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,.04);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .tab-btn{padding:5px 14px;font-size:12px;font-weight:600;border:1.5px solid #cbd5e1;border-radius:20px;background:#f8fafc;color:#475569;cursor:pointer;transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
@@ -194,12 +203,15 @@ select.ei{cursor:pointer}
     <div class="hl">
       <input class="ht-input" id="mainTitle" value="Manufacturing Planner" oninput="syncTitle()" placeholder="Project name...">
     </div>
-    <button class="hbtn btn-print no-print" onclick="window.print()">Print / Export PDF</button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="hbtn btn-save no-print unsaved" id="saveBtn" onclick="saveData()"><span class="save-dot" id="saveDot"></span><span id="saveBtnText">Save</span></button>
+      <button class="hbtn btn-print no-print" onclick="window.print()">Print / Export PDF</button>
+    </div>
   </div>
 </div>
 
-<div class="proj-tabs-wrap no-print" id="projTabs"></div>
-<div class="plan-tabs-wrap no-print" id="planTabs"></div>
+<div class="proj-tabs-wrap no-print" id="projTabs"><button class="tab-btn view-all" onclick="switchProject('all')">🌐 All Projects</button><button class="tab-btn active" onclick="switchProject(1)">LR-340</button><button class="tab-x" onclick="delProject(1,event)">×</button><button class="tab-add" onclick="addProject()">+ Project</button></div>
+<div class="plan-tabs-wrap no-print" id="planTabs"><button class="plan-tab view-all-plans" onclick="switchPlan('all')">📋 All Plans</button><button class="plan-tab active" onclick="switchPlan(1)">C-Axis Machining</button><button class="plan-x" onclick="delPlan(1,event)">×</button><button class="plan-tab" onclick="switchPlan(2)">EOA Machining</button><button class="plan-x" onclick="delPlan(2,event)">×</button><button class="plan-add" onclick="addPlan()">+ Plan</button></div>
 
 <div class="controls">
   <span class="lbl">Plan name</span>
@@ -216,25 +228,266 @@ select.ei{cursor:pointer}
     <span class="lbl">Priority</span>
   </div>
   <div class="view-toggle no-print">
-    <button class="vt-btn active" id="vt-table" onclick="setView('table')">Table</button>
-    <button class="vt-btn" id="vt-machine" onclick="setView('machine')">By Machine</button>
+    <button class="vt-btn active" id="vt-table" onclick="setView(&#39;table&#39;)">Table</button>
+    <button class="vt-btn" id="vt-machine" onclick="setView(&#39;machine&#39;)">By Machine</button>
   </div>
 </div>
 
-<div class="scards" id="scards"></div>
+<div class="scards" id="scards">
+    <div class="sc"><div class="sl">Items</div><div class="sv">11</div></div>
+    <div class="sc"><div class="sl">Total hrs</div><div class="sv">44.8</div></div>
+    <div class="sc"><div class="sl">Working days</div><div class="sv">3</div></div>
+    <div class="sc"><div class="sl">Machines</div><div class="sv">4</div></div>
+    <div class="sc"><div class="sl">Project end</div><div class="sv" style="font-size:12px">29 Apr 2026</div></div>
+  </div>
 
-<div id="tableView">
+<div id="tableView" style="display: block;">
   <div class="sec">Items <span class="sec-line"></span></div>
   <div class="tbl-wrap">
     <table class="main-tbl">
-      <thead id="thead"></thead>
-      <tbody id="tbody"></tbody>
+      <thead id="thead"><tr>
+    <th style="width:22px" class="no-print"></th>
+    <th style="width:30px">#</th>
+    <th style="width:85px">ERP code</th>
+    <th style="width:148px">Description</th>
+    <th style="width:96px">Part number</th>
+    <th style="width:52px">Qty</th>
+    <th style="width:54px">Hrs</th>
+    <th style="width:118px">Machine</th>
+    
+    <th style="width:82px">Start</th>
+    <th style="width:82px">End</th>
+    <th style="width:46px">W.days</th>
+    <th style="width:96px">Status</th>
+    <th style="width:26px" class="no-print"></th>
+  </tr></thead>
+      <tbody id="tbody">
+    <tr draggable="true" data-idx="0" ondragstart="dragStart(event,0)" ondragover="dragOver(event,0)" ondrop="drop(event,0)" ondragleave="dragLeave(event)">
+      <td class="no-print"><div class="drag-handle">⠿</div></td>
+      <td style="text-align:center;color:#94a3b8;font-size:11px">1</td>
+      <td><input class="ei ei-mono" value="RM-02782" onchange="upd(1,&#39;erp&#39;,this.value)"></td>
+      <td><input class="ei" value="LR 340 C Axis V3" onchange="upd(1,&#39;desc&#39;,this.value)"></td>
+      <td><input class="ei ei-mono" value="" onchange="upd(1,&#39;pn&#39;,this.value)"></td>
+      <td><input class="ei ei-c" type="number" min="0" style="width:100%;min-width:44px" value="4" onchange="upd(1,&#39;qty&#39;,this.value)"></td>
+      <td><input class="ei ei-c" type="number" min="0" step="0.5" value="8" onchange="upd(1,&#39;hrs&#39;,this.value)"></td>
+      <td><div class="combo-wrap ">
+    <input class="combo-input" id="ci_1" value="M1000" autocomplete="off" oninput="comboFilter(1,this.value)" onfocus="comboOpen(1)" onblur="comboClose(1)" onkeydown="comboKey(event,1)">
+    <span class="combo-arrow">▼</span>
+    <div class="combo-list" id="cl_1"></div>
+  </div></td>
+      
+      <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">27 Apr</td>
+      <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">27 Apr</td>
+      <td style="text-align:center;font-size:12px;font-weight:700;color:#0d1b4b">1</td>
+      <td><select class="status-sel st-ns" onchange="upd(1,&#39;status&#39;,this.value);this.className=&#39;status-sel &#39;+({&#39;Not Started&#39;:&#39;st-ns&#39;,&#39;In Progress&#39;:&#39;st-ip&#39;,&#39;Done&#39;:&#39;st-dn&#39;,&#39;On Hold&#39;:&#39;st-oh&#39;}[this.value]||&#39;st-ns&#39;)"><option value="Not Started" selected="">Not Started</option><option value="In Progress">In Progress</option><option value="Done">Done</option><option value="On Hold">On Hold</option></select></td>
+      <td class="no-print"><button class="del-btn" onclick="delItem(1)">×</button></td>
+    </tr>
+    <tr draggable="true" data-idx="1" ondragstart="dragStart(event,1)" ondragover="dragOver(event,1)" ondrop="drop(event,1)" ondragleave="dragLeave(event)">
+      <td class="no-print"><div class="drag-handle">⠿</div></td>
+      <td style="text-align:center;color:#94a3b8;font-size:11px">2</td>
+      <td><input class="ei ei-mono" value="RM-02698" onchange="upd(2,&#39;erp&#39;,this.value)"></td>
+      <td><input class="ei" value="Motor Mount Plate" onchange="upd(2,&#39;desc&#39;,this.value)"></td>
+      <td><input class="ei ei-mono" value="P60-00-04-0P-00001-R00-01" onchange="upd(2,&#39;pn&#39;,this.value)"></td>
+      <td><input class="ei ei-c" type="number" min="0" style="width:100%;min-width:44px" value="4" onchange="upd(2,&#39;qty&#39;,this.value)"></td>
+      <td><input class="ei ei-c" type="number" min="0" step="0.5" value="4" onchange="upd(2,&#39;hrs&#39;,this.value)"></td>
+      <td><div class="combo-wrap ">
+    <input class="combo-input" id="ci_2" value="M1000" autocomplete="off" oninput="comboFilter(2,this.value)" onfocus="comboOpen(2)" onblur="comboClose(2)" onkeydown="comboKey(event,2)">
+    <span class="combo-arrow">▼</span>
+    <div class="combo-list" id="cl_2"></div>
+  </div></td>
+      
+      <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">28 Apr</td>
+      <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">28 Apr</td>
+      <td style="text-align:center;font-size:12px;font-weight:700;color:#0d1b4b">1</td>
+      <td><select class="status-sel st-ns" onchange="upd(2,&#39;status&#39;,this.value);this.className=&#39;status-sel &#39;+({&#39;Not Started&#39;:&#39;st-ns&#39;,&#39;In Progress&#39;:&#39;st-ip&#39;,&#39;Done&#39;:&#39;st-dn&#39;,&#39;On Hold&#39;:&#39;st-oh&#39;}[this.value]||&#39;st-ns&#39;)"><option value="Not Started" selected="">Not Started</option><option value="In Progress">In Progress</option><option value="Done">Done</option><option value="On Hold">On Hold</option></select></td>
+      <td class="no-print"><button class="del-btn" onclick="delItem(2)">×</button></td>
+    </tr>
+    <tr draggable="true" data-idx="2" ondragstart="dragStart(event,2)" ondragover="dragOver(event,2)" ondrop="drop(event,2)" ondragleave="dragLeave(event)">
+      <td class="no-print"><div class="drag-handle">⠿</div></td>
+      <td style="text-align:center;color:#94a3b8;font-size:11px">3</td>
+      <td><input class="ei ei-mono" value="RM-02759" onchange="upd(3,&#39;erp&#39;,this.value)"></td>
+      <td><input class="ei" value="Fixation Arm" onchange="upd(3,&#39;desc&#39;,this.value)"></td>
+      <td><input class="ei ei-mono" value="LRGN0/03-C0-007" onchange="upd(3,&#39;pn&#39;,this.value)"></td>
+      <td><input class="ei ei-c" type="number" min="0" style="width:100%;min-width:44px" value="8" onchange="upd(3,&#39;qty&#39;,this.value)"></td>
+      <td><input class="ei ei-c" type="number" min="0" step="0.5" value="3.2" onchange="upd(3,&#39;hrs&#39;,this.value)"></td>
+      <td><div class="combo-wrap ">
+    <input class="combo-input" id="ci_3" value="M2500" autocomplete="off" oninput="comboFilter(3,this.value)" onfocus="comboOpen(3)" onblur="comboClose(3)" onkeydown="comboKey(event,3)">
+    <span class="combo-arrow">▼</span>
+    <div class="combo-list" id="cl_3"></div>
+  </div></td>
+      
+      <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">27 Apr</td>
+      <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">27 Apr</td>
+      <td style="text-align:center;font-size:12px;font-weight:700;color:#0d1b4b">1</td>
+      <td><select class="status-sel st-ns" onchange="upd(3,&#39;status&#39;,this.value);this.className=&#39;status-sel &#39;+({&#39;Not Started&#39;:&#39;st-ns&#39;,&#39;In Progress&#39;:&#39;st-ip&#39;,&#39;Done&#39;:&#39;st-dn&#39;,&#39;On Hold&#39;:&#39;st-oh&#39;}[this.value]||&#39;st-ns&#39;)"><option value="Not Started" selected="">Not Started</option><option value="In Progress">In Progress</option><option value="Done">Done</option><option value="On Hold">On Hold</option></select></td>
+      <td class="no-print"><button class="del-btn" onclick="delItem(3)">×</button></td>
+    </tr>
+    <tr draggable="true" data-idx="3" ondragstart="dragStart(event,3)" ondragover="dragOver(event,3)" ondrop="drop(event,3)" ondragleave="dragLeave(event)">
+      <td class="no-print"><div class="drag-handle">⠿</div></td>
+      <td style="text-align:center;color:#94a3b8;font-size:11px">4</td>
+      <td><input class="ei ei-mono" value="RM-02758" onchange="upd(4,&#39;erp&#39;,this.value)"></td>
+      <td><input class="ei" value="Rotation Plate V2" onchange="upd(4,&#39;desc&#39;,this.value)"></td>
+      <td><input class="ei ei-mono" value="LRGN0/03-C0-006" onchange="upd(4,&#39;pn&#39;,this.value)"></td>
+      <td><input class="ei ei-c" type="number" min="0" style="width:100%;min-width:44px" value="4" onchange="upd(4,&#39;qty&#39;,this.value)"></td>
+      <td><input class="ei ei-c" type="number" min="0" step="0.5" value="3.2" onchange="upd(4,&#39;hrs&#39;,this.value)"></td>
+      <td><div class="combo-wrap ">
+    <input class="combo-input" id="ci_4" value="M2500" autocomplete="off" oninput="comboFilter(4,this.value)" onfocus="comboOpen(4)" onblur="comboClose(4)" onkeydown="comboKey(event,4)">
+    <span class="combo-arrow">▼</span>
+    <div class="combo-list" id="cl_4"></div>
+  </div></td>
+      
+      <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">27 Apr</td>
+      <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">27 Apr</td>
+      <td style="text-align:center;font-size:12px;font-weight:700;color:#0d1b4b">1</td>
+      <td><select class="status-sel st-ns" onchange="upd(4,&#39;status&#39;,this.value);this.className=&#39;status-sel &#39;+({&#39;Not Started&#39;:&#39;st-ns&#39;,&#39;In Progress&#39;:&#39;st-ip&#39;,&#39;Done&#39;:&#39;st-dn&#39;,&#39;On Hold&#39;:&#39;st-oh&#39;}[this.value]||&#39;st-ns&#39;)"><option value="Not Started" selected="">Not Started</option><option value="In Progress">In Progress</option><option value="Done">Done</option><option value="On Hold">On Hold</option></select></td>
+      <td class="no-print"><button class="del-btn" onclick="delItem(4)">×</button></td>
+    </tr>
+    <tr draggable="true" data-idx="4" ondragstart="dragStart(event,4)" ondragover="dragOver(event,4)" ondrop="drop(event,4)" ondragleave="dragLeave(event)">
+      <td class="no-print"><div class="drag-handle">⠿</div></td>
+      <td style="text-align:center;color:#94a3b8;font-size:11px">5</td>
+      <td><input class="ei ei-mono" value="RM-02639" onchange="upd(5,&#39;erp&#39;,this.value)"></td>
+      <td><input class="ei" value="C-Axis GearBox Mount Plate" onchange="upd(5,&#39;desc&#39;,this.value)"></td>
+      <td><input class="ei ei-mono" value="LRGN0/01-A0-003" onchange="upd(5,&#39;pn&#39;,this.value)"></td>
+      <td><input class="ei ei-c" type="number" min="0" style="width:100%;min-width:44px" value="4" onchange="upd(5,&#39;qty&#39;,this.value)"></td>
+      <td><input class="ei ei-c" type="number" min="0" step="0.5" value="4" onchange="upd(5,&#39;hrs&#39;,this.value)"></td>
+      <td><div class="combo-wrap ">
+    <input class="combo-input" id="ci_5" value="M1000" autocomplete="off" oninput="comboFilter(5,this.value)" onfocus="comboOpen(5)" onblur="comboClose(5)" onkeydown="comboKey(event,5)">
+    <span class="combo-arrow">▼</span>
+    <div class="combo-list" id="cl_5"></div>
+  </div></td>
+      
+      <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">28 Apr</td>
+      <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">28 Apr</td>
+      <td style="text-align:center;font-size:12px;font-weight:700;color:#0d1b4b">1</td>
+      <td><select class="status-sel st-ns" onchange="upd(5,&#39;status&#39;,this.value);this.className=&#39;status-sel &#39;+({&#39;Not Started&#39;:&#39;st-ns&#39;,&#39;In Progress&#39;:&#39;st-ip&#39;,&#39;Done&#39;:&#39;st-dn&#39;,&#39;On Hold&#39;:&#39;st-oh&#39;}[this.value]||&#39;st-ns&#39;)"><option value="Not Started" selected="">Not Started</option><option value="In Progress">In Progress</option><option value="Done">Done</option><option value="On Hold">On Hold</option></select></td>
+      <td class="no-print"><button class="del-btn" onclick="delItem(5)">×</button></td>
+    </tr>
+    <tr draggable="true" data-idx="5" ondragstart="dragStart(event,5)" ondragover="dragOver(event,5)" ondrop="drop(event,5)" ondragleave="dragLeave(event)">
+      <td class="no-print"><div class="drag-handle">⠿</div></td>
+      <td style="text-align:center;color:#94a3b8;font-size:11px">6</td>
+      <td><input class="ei ei-mono" value="RM-02719" onchange="upd(6,&#39;erp&#39;,this.value)"></td>
+      <td><input class="ei" value="C-Axis Cross Bearing Mount Plate" onchange="upd(6,&#39;desc&#39;,this.value)"></td>
+      <td><input class="ei ei-mono" value="LRGN0/01-A0-006" onchange="upd(6,&#39;pn&#39;,this.value)"></td>
+      <td><input class="ei ei-c" type="number" min="0" style="width:100%;min-width:44px" value="4" onchange="upd(6,&#39;qty&#39;,this.value)"></td>
+      <td><input class="ei ei-c" type="number" min="0" step="0.5" value="2.4" onchange="upd(6,&#39;hrs&#39;,this.value)"></td>
+      <td><div class="combo-wrap ">
+    <input class="combo-input" id="ci_6" value="M1000" autocomplete="off" oninput="comboFilter(6,this.value)" onfocus="comboOpen(6)" onblur="comboClose(6)" onkeydown="comboKey(event,6)">
+    <span class="combo-arrow">▼</span>
+    <div class="combo-list" id="cl_6"></div>
+  </div></td>
+      
+      <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">29 Apr</td>
+      <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">29 Apr</td>
+      <td style="text-align:center;font-size:12px;font-weight:700;color:#0d1b4b">1</td>
+      <td><select class="status-sel st-ns" onchange="upd(6,&#39;status&#39;,this.value);this.className=&#39;status-sel &#39;+({&#39;Not Started&#39;:&#39;st-ns&#39;,&#39;In Progress&#39;:&#39;st-ip&#39;,&#39;Done&#39;:&#39;st-dn&#39;,&#39;On Hold&#39;:&#39;st-oh&#39;}[this.value]||&#39;st-ns&#39;)"><option value="Not Started" selected="">Not Started</option><option value="In Progress">In Progress</option><option value="Done">Done</option><option value="On Hold">On Hold</option></select></td>
+      <td class="no-print"><button class="del-btn" onclick="delItem(6)">×</button></td>
+    </tr>
+    <tr draggable="true" data-idx="6" ondragstart="dragStart(event,6)" ondragover="dragOver(event,6)" ondrop="drop(event,6)" ondragleave="dragLeave(event)">
+      <td class="no-print"><div class="drag-handle">⠿</div></td>
+      <td style="text-align:center;color:#94a3b8;font-size:11px">7</td>
+      <td><input class="ei ei-mono" value="RM-02630" onchange="upd(7,&#39;erp&#39;,this.value)"></td>
+      <td><input class="ei" value="Rotation Shaft Female" onchange="upd(7,&#39;desc&#39;,this.value)"></td>
+      <td><input class="ei ei-mono" value="LRGNO/03-C0-003" onchange="upd(7,&#39;pn&#39;,this.value)"></td>
+      <td><input class="ei ei-c" type="number" min="0" style="width:100%;min-width:44px" value="4" onchange="upd(7,&#39;qty&#39;,this.value)"></td>
+      <td><input class="ei ei-c" type="number" min="0" step="0.5" value="8" onchange="upd(7,&#39;hrs&#39;,this.value)"></td>
+      <td><div class="combo-wrap ">
+    <input class="combo-input" id="ci_7" value="T0001" autocomplete="off" oninput="comboFilter(7,this.value)" onfocus="comboOpen(7)" onblur="comboClose(7)" onkeydown="comboKey(event,7)">
+    <span class="combo-arrow">▼</span>
+    <div class="combo-list" id="cl_7"></div>
+  </div></td>
+      
+      <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">27 Apr</td>
+      <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">27 Apr</td>
+      <td style="text-align:center;font-size:12px;font-weight:700;color:#0d1b4b">1</td>
+      <td><select class="status-sel st-ns" onchange="upd(7,&#39;status&#39;,this.value);this.className=&#39;status-sel &#39;+({&#39;Not Started&#39;:&#39;st-ns&#39;,&#39;In Progress&#39;:&#39;st-ip&#39;,&#39;Done&#39;:&#39;st-dn&#39;,&#39;On Hold&#39;:&#39;st-oh&#39;}[this.value]||&#39;st-ns&#39;)"><option value="Not Started" selected="">Not Started</option><option value="In Progress">In Progress</option><option value="Done">Done</option><option value="On Hold">On Hold</option></select></td>
+      <td class="no-print"><button class="del-btn" onclick="delItem(7)">×</button></td>
+    </tr>
+    <tr draggable="true" data-idx="7" ondragstart="dragStart(event,7)" ondragover="dragOver(event,7)" ondrop="drop(event,7)" ondragleave="dragLeave(event)">
+      <td class="no-print"><div class="drag-handle">⠿</div></td>
+      <td style="text-align:center;color:#94a3b8;font-size:11px">8</td>
+      <td><input class="ei ei-mono" value="RM-02631" onchange="upd(8,&#39;erp&#39;,this.value)"></td>
+      <td><input class="ei" value="Rotation Shaft Male" onchange="upd(8,&#39;desc&#39;,this.value)"></td>
+      <td><input class="ei ei-mono" value="LRGNO/02-C0-002" onchange="upd(8,&#39;pn&#39;,this.value)"></td>
+      <td><input class="ei ei-c" type="number" min="0" style="width:100%;min-width:44px" value="4" onchange="upd(8,&#39;qty&#39;,this.value)"></td>
+      <td><input class="ei ei-c" type="number" min="0" step="0.5" value="8" onchange="upd(8,&#39;hrs&#39;,this.value)"></td>
+      <td><div class="combo-wrap ">
+    <input class="combo-input" id="ci_8" value="T0001" autocomplete="off" oninput="comboFilter(8,this.value)" onfocus="comboOpen(8)" onblur="comboClose(8)" onkeydown="comboKey(event,8)">
+    <span class="combo-arrow">▼</span>
+    <div class="combo-list" id="cl_8"></div>
+  </div></td>
+      
+      <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">28 Apr</td>
+      <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">28 Apr</td>
+      <td style="text-align:center;font-size:12px;font-weight:700;color:#0d1b4b">1</td>
+      <td><select class="status-sel st-ns" onchange="upd(8,&#39;status&#39;,this.value);this.className=&#39;status-sel &#39;+({&#39;Not Started&#39;:&#39;st-ns&#39;,&#39;In Progress&#39;:&#39;st-ip&#39;,&#39;Done&#39;:&#39;st-dn&#39;,&#39;On Hold&#39;:&#39;st-oh&#39;}[this.value]||&#39;st-ns&#39;)"><option value="Not Started" selected="">Not Started</option><option value="In Progress">In Progress</option><option value="Done">Done</option><option value="On Hold">On Hold</option></select></td>
+      <td class="no-print"><button class="del-btn" onclick="delItem(8)">×</button></td>
+    </tr>
+    <tr draggable="true" data-idx="8" ondragstart="dragStart(event,8)" ondragover="dragOver(event,8)" ondrop="drop(event,8)" ondragleave="dragLeave(event)">
+      <td class="no-print"><div class="drag-handle">⠿</div></td>
+      <td style="text-align:center;color:#94a3b8;font-size:11px">9</td>
+      <td><input class="ei ei-mono" value="RM-02761" onchange="upd(9,&#39;erp&#39;,this.value)"></td>
+      <td><input class="ei" value="Cross Bearing Mount Spacer" onchange="upd(9,&#39;desc&#39;,this.value)"></td>
+      <td><input class="ei ei-mono" value="LRGN0/03-C0-005" onchange="upd(9,&#39;pn&#39;,this.value)"></td>
+      <td><input class="ei ei-c" type="number" min="0" style="width:100%;min-width:44px" value="16" onchange="upd(9,&#39;qty&#39;,this.value)"></td>
+      <td><input class="ei ei-c" type="number" min="0" step="0.5" value="1.6" onchange="upd(9,&#39;hrs&#39;,this.value)"></td>
+      <td><div class="combo-wrap ">
+    <input class="combo-input" id="ci_9" value="T0001" autocomplete="off" oninput="comboFilter(9,this.value)" onfocus="comboOpen(9)" onblur="comboClose(9)" onkeydown="comboKey(event,9)">
+    <span class="combo-arrow">▼</span>
+    <div class="combo-list" id="cl_9"></div>
+  </div></td>
+      
+      <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">29 Apr</td>
+      <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">29 Apr</td>
+      <td style="text-align:center;font-size:12px;font-weight:700;color:#0d1b4b">1</td>
+      <td><select class="status-sel st-ns" onchange="upd(9,&#39;status&#39;,this.value);this.className=&#39;status-sel &#39;+({&#39;Not Started&#39;:&#39;st-ns&#39;,&#39;In Progress&#39;:&#39;st-ip&#39;,&#39;Done&#39;:&#39;st-dn&#39;,&#39;On Hold&#39;:&#39;st-oh&#39;}[this.value]||&#39;st-ns&#39;)"><option value="Not Started" selected="">Not Started</option><option value="In Progress">In Progress</option><option value="Done">Done</option><option value="On Hold">On Hold</option></select></td>
+      <td class="no-print"><button class="del-btn" onclick="delItem(9)">×</button></td>
+    </tr>
+    <tr draggable="true" data-idx="9" ondragstart="dragStart(event,9)" ondragover="dragOver(event,9)" ondrop="drop(event,9)" ondragleave="dragLeave(event)">
+      <td class="no-print"><div class="drag-handle">⠿</div></td>
+      <td style="text-align:center;color:#94a3b8;font-size:11px">10</td>
+      <td><input class="ei ei-mono" value="RM-02760" onchange="upd(10,&#39;erp&#39;,this.value)"></td>
+      <td><input class="ei" value="C Axis Motor Mount Spacer" onchange="upd(10,&#39;desc&#39;,this.value)"></td>
+      <td><input class="ei ei-mono" value="LRGN0/03-C0-004" onchange="upd(10,&#39;pn&#39;,this.value)"></td>
+      <td><input class="ei ei-c" type="number" min="0" style="width:100%;min-width:44px" value="16" onchange="upd(10,&#39;qty&#39;,this.value)"></td>
+      <td><input class="ei ei-c" type="number" min="0" step="0.5" value="1.6" onchange="upd(10,&#39;hrs&#39;,this.value)"></td>
+      <td><div class="combo-wrap ">
+    <input class="combo-input" id="ci_10" value="T0001" autocomplete="off" oninput="comboFilter(10,this.value)" onfocus="comboOpen(10)" onblur="comboClose(10)" onkeydown="comboKey(event,10)">
+    <span class="combo-arrow">▼</span>
+    <div class="combo-list" id="cl_10"></div>
+  </div></td>
+      
+      <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">29 Apr</td>
+      <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">29 Apr</td>
+      <td style="text-align:center;font-size:12px;font-weight:700;color:#0d1b4b">1</td>
+      <td><select class="status-sel st-ns" onchange="upd(10,&#39;status&#39;,this.value);this.className=&#39;status-sel &#39;+({&#39;Not Started&#39;:&#39;st-ns&#39;,&#39;In Progress&#39;:&#39;st-ip&#39;,&#39;Done&#39;:&#39;st-dn&#39;,&#39;On Hold&#39;:&#39;st-oh&#39;}[this.value]||&#39;st-ns&#39;)"><option value="Not Started" selected="">Not Started</option><option value="In Progress">In Progress</option><option value="Done">Done</option><option value="On Hold">On Hold</option></select></td>
+      <td class="no-print"><button class="del-btn" onclick="delItem(10)">×</button></td>
+    </tr>
+    <tr draggable="true" data-idx="10" ondragstart="dragStart(event,10)" ondragover="dragOver(event,10)" ondrop="drop(event,10)" ondragleave="dragLeave(event)">
+      <td class="no-print"><div class="drag-handle">⠿</div></td>
+      <td style="text-align:center;color:#94a3b8;font-size:11px">11</td>
+      <td><input class="ei ei-mono" value="RM-02777" onchange="upd(11,&#39;erp&#39;,this.value)"></td>
+      <td><input class="ei" value="Steel PIN D5x28x1.2mm" onchange="upd(11,&#39;desc&#39;,this.value)"></td>
+      <td><input class="ei ei-mono" value="DIN EN 22340-B-5x28x1.2" onchange="upd(11,&#39;pn&#39;,this.value)"></td>
+      <td><input class="ei ei-c" type="number" min="0" style="width:100%;min-width:44px" value="0" onchange="upd(11,&#39;qty&#39;,this.value)"></td>
+      <td><input class="ei ei-c" type="number" min="0" step="0.5" value="0.8" onchange="upd(11,&#39;hrs&#39;,this.value)"></td>
+      <td><div class="combo-wrap ">
+    <input class="combo-input" id="ci_11" value="WireCut0001" autocomplete="off" oninput="comboFilter(11,this.value)" onfocus="comboOpen(11)" onblur="comboClose(11)" onkeydown="comboKey(event,11)">
+    <span class="combo-arrow">▼</span>
+    <div class="combo-list" id="cl_11"></div>
+  </div></td>
+      
+      <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">27 Apr</td>
+      <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">27 Apr</td>
+      <td style="text-align:center;font-size:12px;font-weight:700;color:#0d1b4b">1</td>
+      <td><select class="status-sel st-ns" onchange="upd(11,&#39;status&#39;,this.value);this.className=&#39;status-sel &#39;+({&#39;Not Started&#39;:&#39;st-ns&#39;,&#39;In Progress&#39;:&#39;st-ip&#39;,&#39;Done&#39;:&#39;st-dn&#39;,&#39;On Hold&#39;:&#39;st-oh&#39;}[this.value]||&#39;st-ns&#39;)"><option value="Not Started" selected="">Not Started</option><option value="In Progress">In Progress</option><option value="Done">Done</option><option value="On Hold">On Hold</option></select></td>
+      <td class="no-print"><button class="del-btn" onclick="delItem(11)">×</button></td>
+    </tr></tbody>
     </table>
   </div>
   <div class="sec">Gantt chart <span class="sec-line"></span></div>
   <div class="gantt-section">
-    <div class="gantt-scroll"><div id="gantt"></div></div>
-    <div class="legend" id="ganttLegend"></div>
+    <div class="gantt-scroll"><div id="gantt"><div style="display:inline-block;min-width:max-content"><div class="gh-month-row"><div class="gh-month-lbl">Item</div><div class="gh-month-cell" style="width:80px;min-width:80px">Apr 2026</div><div class="gh-month-cell" style="width:60px;min-width:60px">May 2026</div></div><div class="gh-row"><div class="gh-lbl">ERP — Description</div><div class="gh-day tod">27</div><div class="gh-day">28</div><div class="gh-day">29</div><div class="gh-day">30</div><div class="gh-day we">1</div><div class="gh-day we">2</div><div class="gh-day">3</div></div><div class="gr-row"><div class="gr-lbl" title="RM-02782 — LR 340 C Axis V3">RM-02782 — LR 340 C Axis V3</div><div class="gc tod m0-se"></div><div class="gc"></div><div class="gc"></div><div class="gc"></div><div class="gc we"></div><div class="gc we"></div><div class="gc"></div></div><div class="gr-row"><div class="gr-lbl" title="RM-02698 — Motor Mount Plate">RM-02698 — Motor Mount Plate</div><div class="gc tod"></div><div class="gc m0-se"></div><div class="gc"></div><div class="gc"></div><div class="gc we"></div><div class="gc we"></div><div class="gc"></div></div><div class="gr-row"><div class="gr-lbl" title="RM-02759 — Fixation Arm">RM-02759 — Fixation Arm</div><div class="gc tod m1-se"></div><div class="gc"></div><div class="gc"></div><div class="gc"></div><div class="gc we"></div><div class="gc we"></div><div class="gc"></div></div><div class="gr-row"><div class="gr-lbl" title="RM-02758 — Rotation Plate V2">RM-02758 — Rotation Plate V2</div><div class="gc tod m1-se"></div><div class="gc"></div><div class="gc"></div><div class="gc"></div><div class="gc we"></div><div class="gc we"></div><div class="gc"></div></div><div class="gr-row"><div class="gr-lbl" title="RM-02639 — C-Axis GearBox Mount Plate">RM-02639 — C-Axis GearBox Mount Plate</div><div class="gc tod"></div><div class="gc m0-se"></div><div class="gc"></div><div class="gc"></div><div class="gc we"></div><div class="gc we"></div><div class="gc"></div></div><div class="gr-row"><div class="gr-lbl" title="RM-02719 — C-Axis Cross Bearing Mount Plate">RM-02719 — C-Axis Cross Bearing Mount Plate</div><div class="gc tod"></div><div class="gc"></div><div class="gc m0-se"></div><div class="gc"></div><div class="gc we"></div><div class="gc we"></div><div class="gc"></div></div><div class="gr-row"><div class="gr-lbl" title="RM-02630 — Rotation Shaft Female">RM-02630 — Rotation Shaft Female</div><div class="gc tod m5-se"></div><div class="gc"></div><div class="gc"></div><div class="gc"></div><div class="gc we"></div><div class="gc we"></div><div class="gc"></div></div><div class="gr-row"><div class="gr-lbl" title="RM-02631 — Rotation Shaft Male">RM-02631 — Rotation Shaft Male</div><div class="gc tod"></div><div class="gc m5-se"></div><div class="gc"></div><div class="gc"></div><div class="gc we"></div><div class="gc we"></div><div class="gc"></div></div><div class="gr-row"><div class="gr-lbl" title="RM-02761 — Cross Bearing Mount Spacer">RM-02761 — Cross Bearing Mount Spacer</div><div class="gc tod"></div><div class="gc"></div><div class="gc m5-se"></div><div class="gc"></div><div class="gc we"></div><div class="gc we"></div><div class="gc"></div></div><div class="gr-row"><div class="gr-lbl" title="RM-02760 — C Axis Motor Mount Spacer">RM-02760 — C Axis Motor Mount Spacer</div><div class="gc tod"></div><div class="gc"></div><div class="gc m5-se"></div><div class="gc"></div><div class="gc we"></div><div class="gc we"></div><div class="gc"></div></div><div class="gr-row"><div class="gr-lbl" title="RM-02777 — Steel PIN D5x28x1.2mm">RM-02777 — Steel PIN D5x28x1.2mm</div><div class="gc tod m4-se"></div><div class="gc"></div><div class="gc"></div><div class="gc"></div><div class="gc we"></div><div class="gc we"></div><div class="gc"></div></div></div></div></div>
+    <div class="legend" id="ganttLegend"><span class="leg-item"><span class="leg-dot" style="background:#fff5f5;border:1px solid #fca5a5"></span>Weekend</span><span class="leg-item"><span style="width:2px;height:11px;background:#f59e0b;display:inline-block"></span>Today</span><span class="leg-item"><span class="leg-dot" style="background:#378ADD"></span>M1000</span><span class="leg-item"><span class="leg-dot" style="background:#7c3aed"></span>M2500</span><span class="leg-item"><span class="leg-dot" style="background:#0891b2"></span>T0001</span><span class="leg-item"><span class="leg-dot" style="background:#dc2626"></span>WireCut0001</span></div>
   </div>
 </div>
 
@@ -292,14 +545,94 @@ let projects=[
 let activeProjId=1,activePlanId=1,nid=100;
 let currentView='table';
 let dragSrc=null; // {type:'table'|'machine', fromIdx, machine?}
+let _unsavedChanges=false;
+
+/* ══════════════════════════════════════════
+   SAVE / LOAD (localStorage)
+══════════════════════════════════════════ */
+const SAVE_KEY='aria_mfg_planner_v1';
+
+function saveData(){
+  const payload={projects,activeProjId,activePlanId,nid,mainTitle:document.getElementById('mainTitle').value};
+  try{
+    localStorage.setItem(SAVE_KEY,JSON.stringify(payload));
+    _unsavedChanges=false;
+    const btn=document.getElementById('saveBtn');
+    const dot=document.getElementById('saveDot');
+    const txt=document.getElementById('saveBtnText');
+    btn.className='hbtn btn-save no-print saved';
+    dot.style.animation='none';
+    dot.style.background='#a7f3d0';
+    txt.textContent='Saved ✓';
+    setTimeout(()=>{
+      btn.className='hbtn btn-save no-print';
+      dot.style.animation='';
+      dot.style.background='#fde68a';
+      txt.textContent='Save';
+    },2000);
+  }catch(e){alert('Save failed: '+e.message);}
+}
+
+function loadData(){
+  try{
+    const raw=localStorage.getItem(SAVE_KEY);
+    if(!raw)return false;
+    const p=JSON.parse(raw);
+    if(p.projects)projects=p.projects;
+    if(p.activeProjId)activeProjId=p.activeProjId;
+    if(p.activePlanId)activePlanId=p.activePlanId;
+    if(p.nid)nid=p.nid;
+    if(p.mainTitle){const el=document.getElementById('mainTitle');if(el)el.value=p.mainTitle;}
+    return true;
+  }catch(e){return false;}
+}
+
+function markUnsaved(){
+  if(_unsavedChanges)return;
+  _unsavedChanges=true;
+  const btn=document.getElementById('saveBtn');
+  if(btn)btn.className='hbtn btn-save no-print unsaved';
+}
+
 
 /* ══════════════════════════════════════════
    HELPERS
 ══════════════════════════════════════════ */
 function todayStr(){return new Date().toISOString().split('T')[0];}
-function getProj(){return projects.find(p=>p.id===activeProjId);}
-function getPlan(){const pr=getProj();return pr?pr.plans.find(p=>p.id===activePlanId):null;}
-function getItems(){const pl=getPlan();return pl?pl.items:[];}
+function getProj(){return activeProjId==='all'?null:projects.find(p=>p.id===activeProjId);}
+function getPlan(){
+  if(activeProjId==='all'||activePlanId==='all')return null;
+  const pr=getProj();return pr?pr.plans.find(p=>p.id===activePlanId):null;
+}
+function getItems(){
+  if(activeProjId==='all'){
+    // All items across all projects + all plans
+    return projects.flatMap(pr=>pr.plans.flatMap(pl=>pl.items));
+  }
+  if(activePlanId==='all'){
+    // All items across all plans of current project
+    const pr=getProj();return pr?pr.plans.flatMap(pl=>pl.items):[];
+  }
+  const pl=getPlan();return pl?pl.items:[];
+}
+// Get all scheduled items for all-plan / all-project views (each plan independently scheduled)
+function getAllSched(){
+  let allItems=[];
+  if(activeProjId==='all'){
+    projects.forEach(pr=>{
+      pr.plans.forEach(pl=>{
+        allItems=allItems.concat(computeSchedForPlan(pl));
+      });
+    });
+  } else {
+    const pr=getProj();
+    if(pr) pr.plans.forEach(pl=>{
+      allItems=allItems.concat(computeSchedForPlan(pl));
+    });
+  }
+  return allItems;
+}
+function isAllMode(){return activeProjId==='all'||activePlanId==='all';}
 function isWE(d){const w=d.getDay();return w===5||w===6;}
 function cloneDay(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
 function skipWE(d){const r=cloneDay(d);while(isWE(r))r.setDate(r.getDate()+1);return r;}
@@ -323,31 +656,27 @@ function getMachineBase(m){
 /* ══════════════════════════════════════════
    SCHEDULER — per-machine, own start date
 ══════════════════════════════════════════ */
-function computeSched(){
-  const pl=getPlan();
-  const items=getItems();
-  if(!pl)return items.map(it=>({...it,start:null,end:null,wdays:0}));
-
+function computeSchedForPlan(pl){
+  if(!pl)return[];
+  const items=pl.items;
   const mCursor={};
   const mHours={};
-
   function initMachine(m){
     if(!mCursor[m]){
-      mCursor[m]=skipWE(cloneDay(getMachineBase(m)||parseDate(pl.startDate)||new Date()));
+      const ms=pl.machineStarts||{};
+      const base=ms[m]?parseDate(ms[m]):(pl.startDate?parseDate(pl.startDate):new Date());
+      mCursor[m]=skipWE(cloneDay(base));
       mHours[m]=8;
     }
   }
-
   return items.map(it=>{
     const m=it.machine||'M1000';
     initMachine(m);
-
     if(mHours[m]<=0){
       mCursor[m].setDate(mCursor[m].getDate()+1);
       while(isWE(mCursor[m]))mCursor[m].setDate(mCursor[m].getDate()+1);
       mHours[m]=8;
     }
-
     const startDay=cloneDay(mCursor[m]);
     let rem=Math.max(it.hrs,0.0001);
     while(rem>0){
@@ -360,8 +689,14 @@ function computeSched(){
       }
     }
     const endDay=cloneDay(mCursor[m]);
-    return{...it,start:startDay,end:endDay,wdays:countWD(startDay,endDay)};
+    return{...it,start:startDay,end:endDay,wdays:countWD(startDay,endDay),_planName:pl.name};
   });
+}
+
+function computeSched(){
+  if(isAllMode())return getAllSched();
+  const pl=getPlan();
+  return computeSchedForPlan(pl);
 }
 
 /* ══════════════════════════════════════════
@@ -454,24 +789,23 @@ function comboKey(e,itemId){
 function upd(id,f,v){
   const pl=getPlan();if(!pl)return;
   pl.items=pl.items.map(it=>it.id===id?{...it,[f]:(f==='hrs'||f==='qty'||f==='priority')?+v:v}:it);
-  render();
+  markUnsaved();render();
 }
-function delItem(id){const pl=getPlan();if(!pl)return;pl.items=pl.items.filter(it=>it.id!==id);render();}
+function delItem(id){const pl=getPlan();if(!pl)return;pl.items=pl.items.filter(it=>it.id!==id);markUnsaved();render();}
 function addItem(){
   const pl=getPlan();if(!pl)return;
   pl.items.push({id:nid++,erp:'RM-NEW',desc:'New item',pn:'',qty:1,hrs:8,machine:'M1000',priority:3,status:'Not Started'});
-  render();
+  markUnsaved();render();
 }
 function moveItem(fromIdx,toIdx){
   const pl=getPlan();if(!pl)return;
   const arr=[...pl.items];
   const[moved]=arr.splice(fromIdx,1);
   arr.splice(toIdx,0,moved);
-  pl.items=arr;render();
+  pl.items=arr;markUnsaved();render();
 }
 function moveMachineItem(m,fromIdx,toIdx){
   const pl=getPlan();if(!pl)return;
-  // get global indices of this machine's items
   const mIdxs=pl.items.map((it,gi)=>it.machine===m?gi:-1).filter(gi=>gi>=0);
   if(!mIdxs[fromIdx]===undefined||mIdxs[toIdx]===undefined)return;
   const arr=[...pl.items];
@@ -479,13 +813,13 @@ function moveMachineItem(m,fromIdx,toIdx){
   const toGlobal=mIdxs[toIdx];
   const[moved]=arr.splice(fromGlobal,1);
   arr.splice(toGlobal,0,moved);
-  pl.items=arr;render();
+  pl.items=arr;markUnsaved();render();
 }
 function setMachineStart(m,val){
   const pl=getPlan();if(!pl)return;
   if(!pl.machineStarts)pl.machineStarts={};
   pl.machineStarts[m]=val;
-  render();
+  markUnsaved();render();
 }
 
 /* PROJECT / PLAN MANAGEMENT */
@@ -493,23 +827,28 @@ function addProject(){
   const name=prompt('Project name:','New Project');if(!name)return;
   const id=Date.now(),planId=id+1;
   projects.push({id,name,plans:[{id:planId,name:'Plan 1',startDate:todayStr(),machineStarts:{},items:[]}]});
-  activeProjId=id;activePlanId=planId;render();
+  activeProjId=id;activePlanId=planId;markUnsaved();render();
 }
 function delProject(id,e){
   e.stopPropagation();
   if(projects.length<=1){alert('At least one project required.');return;}
   if(!confirm('Delete project?'))return;
   projects=projects.filter(p=>p.id!==id);
-  activeProjId=projects[0].id;activePlanId=projects[0].plans[0].id;render();
+  activeProjId=projects[0].id;activePlanId=projects[0].plans[0].id;markUnsaved();render();
 }
-function switchProject(id){activeProjId=id;activePlanId=getProj().plans[0].id;render();}
+function switchProject(id){
+  activeProjId=id;
+  if(id==='all'){activePlanId='all';}
+  else{activePlanId=getProj().plans[0].id;}
+  render();
+}
 
 function addPlan(){
   const pr=getProj();if(!pr)return;
   const name=prompt('Plan name:','New Plan');if(!name)return;
   const id=Date.now();
   pr.plans.push({id,name,startDate:todayStr(),machineStarts:{},items:[]});
-  activePlanId=id;render();
+  activePlanId=id;markUnsaved();render();
 }
 function delPlan(id,e){
   e.stopPropagation();
@@ -517,7 +856,7 @@ function delPlan(id,e){
   if(pr.plans.length<=1){alert('At least one plan required.');return;}
   if(!confirm('Delete plan?'))return;
   pr.plans=pr.plans.filter(p=>p.id!==id);
-  activePlanId=pr.plans[0].id;render();
+  activePlanId=pr.plans[0].id;markUnsaved();render();
 }
 function switchPlan(id){activePlanId=id;render();}
 function syncTitle(){
@@ -590,13 +929,16 @@ function render(){
   const pl=getPlan();
   const pr=getProj();
   const titleEl=document.getElementById('mainTitle');
-  if(titleEl&&!titleEl.matches(':focus'))
-    titleEl.value=(pr?pr.name:'')+(pl?' — '+pl.name:'');
+  if(titleEl&&!titleEl.matches(':focus')){
+    if(activeProjId==='all') titleEl.value='All Projects — Overview';
+    else if(activePlanId==='all') titleEl.value=(pr?pr.name:'')+' — All Plans';
+    else titleEl.value=(pr?pr.name:'')+(pl?' — '+pl.name:'');
+  }
 }
 
 function renderProjTabs(){
   const el=document.getElementById('projTabs');
-  let h='';
+  let h=`<button class="tab-btn view-all${activeProjId==='all'?' active':''}" onclick="switchProject('all')">🌐 All Projects</button>`;
   projects.forEach(p=>{
     const a=p.id===activeProjId;
     h+=`<button class="tab-btn${a?' active':''}" onclick="switchProject(${p.id})">${esc(p.name)}<button class="tab-x" onclick="delProject(${p.id},event)">×</button></button>`;
@@ -606,8 +948,12 @@ function renderProjTabs(){
 }
 function renderPlanTabs(){
   const pr=getProj();const el=document.getElementById('planTabs');
+  if(activeProjId==='all'){
+    el.innerHTML='<span style="font-size:11px;color:#64748b;padding:4px 8px">Showing all plans across all projects</span>';
+    return;
+  }
   if(!pr){el.innerHTML='';return;}
-  let h='';
+  let h=`<button class="plan-tab view-all-plans${activePlanId==='all'?' active':''}" onclick="switchPlan('all')">📋 All Plans</button>`;
   pr.plans.forEach(p=>{
     const a=p.id===activePlanId;
     h+=`<button class="plan-tab${a?' active':''}" onclick="switchPlan(${p.id})">${esc(p.name)}<button class="plan-x" onclick="delPlan(${p.id},event)">×</button></button>`;
@@ -616,22 +962,40 @@ function renderPlanTabs(){
   el.innerHTML=h;
 }
 function renderControls(){
-  const pl=getPlan();if(!pl)return;
+  const pl=getPlan();
   const pn=document.getElementById('planName');
   const sd=document.getElementById('startDate');
-  if(!pn.matches(':focus'))pn.value=pl.name||'';
-  if(!sd.matches(':focus'))sd.value=pl.startDate||'';
+  const addBtn=document.querySelector('.btn-add');
+  if(isAllMode()){
+    if(!pn.matches(':focus'))pn.value='';
+    pn.placeholder='— view only —';
+    pn.disabled=true;
+    if(sd)sd.disabled=true;
+    if(addBtn)addBtn.style.display='none';
+  } else {
+    pn.disabled=false;pn.placeholder='Plan name...';
+    if(sd)sd.disabled=false;
+    if(addBtn)addBtn.style.display='';
+    if(pl){
+      if(!pn.matches(':focus'))pn.value=pl.name||'';
+      if(!sd.matches(':focus'))sd.value=pl.startDate||'';
+    }
+  }
 }
 function renderSummary(sched){
-  const items=getItems();
-  const pl=getPlan();
-  const base=getBase();
-  const totHrs=items.reduce((a,b)=>a+b.hrs,0);
+  const items=sched.length?sched:getItems().map(it=>({...it,start:null,end:null,wdays:0}));
+  const totHrs=items.reduce((a,b)=>a+(b.hrs||0),0);
   const ends=sched.filter(x=>x.end).map(x=>x.end.getTime());
+  const starts=sched.filter(x=>x.start).map(x=>x.start.getTime());
   const pEnd=ends.length?new Date(Math.max(...ends)):null;
-  const wd=base&&pEnd?countWD(base,pEnd):0;
+  const pStart=starts.length?new Date(Math.min(...starts)):null;
+  const wd=pStart&&pEnd?countWD(pStart,pEnd):0;
   const machines=[...new Set(items.map(it=>it.machine))].filter(Boolean);
+  let extra='';
+  if(activeProjId==='all') extra=`<div class="sc"><div class="sl">Projects</div><div class="sv">${projects.length}</div></div>`;
+  else if(activePlanId==='all'){const pr=getProj();extra=`<div class="sc"><div class="sl">Plans</div><div class="sv">${pr?pr.plans.length:0}</div></div>`;}
   document.getElementById('scards').innerHTML=`
+    ${extra}
     <div class="sc"><div class="sl">Items</div><div class="sv">${items.length}</div></div>
     <div class="sc"><div class="sl">Total hrs</div><div class="sv">${totHrs.toFixed(1)}</div></div>
     <div class="sc"><div class="sl">Working days</div><div class="sv">${wd||'—'}</div></div>
@@ -645,9 +1009,12 @@ function renderSummary(sched){
 ══════════════════════════════════════════ */
 function renderTable(sched){
   const showPrio=document.getElementById('prioToggle').checked;
+  const allMode=isAllMode();
+  const groupCol=activeProjId==='all'?'Project / Plan':activePlanId==='all'?'Plan':'';
   document.getElementById('thead').innerHTML=`<tr>
-    <th style="width:22px" class="no-print"></th>
+    ${allMode?'':`<th style="width:22px" class="no-print"></th>`}
     <th style="width:30px">#</th>
+    ${groupCol?`<th style="min-width:110px">${groupCol}</th>`:''}
     <th style="width:85px">ERP code</th>
     <th style="width:148px">Description</th>
     <th style="width:96px">Part number</th>
@@ -659,31 +1026,49 @@ function renderTable(sched){
     <th style="width:82px">End</th>
     <th style="width:46px">W.days</th>
     <th style="width:96px">Status</th>
-    <th style="width:26px" class="no-print"></th>
+    ${allMode?'':`<th style="width:26px" class="no-print"></th>`}
   </tr>`;
   const tb=document.getElementById('tbody');
   if(!sched.length){tb.innerHTML=`<tr><td colspan="14" style="text-align:center;padding:2rem;color:#94a3b8">No items</td></tr>`;return;}
-  tb.innerHTML=sched.map((it,i)=>`
-    <tr draggable="true" data-idx="${i}"
-      ondragstart="dragStart(event,${i})" ondragover="dragOver(event,${i})"
-      ondrop="drop(event,${i})" ondragleave="dragLeave(event)">
-      <td class="no-print"><div class="drag-handle">⠿</div></td>
+
+  // Group label per item
+  function groupLabel(it){
+    if(activeProjId==='all'){
+      // find project + plan
+      for(const pr of projects){
+        for(const pl of pr.plans){
+          if(pl.items.find(x=>x.id===it.id))
+            return`<span style="font-size:10px;line-height:1.3;display:block"><b style="color:#0d1b4b">${esc(pr.name)}</b><br><span style="color:#64748b">${esc(pl.name)}</span></span>`;
+        }
+      }
+      return'—';
+    } else {
+      return`<span style="font-size:10px;color:#475569">${esc(it._planName||'')}</span>`;
+    }
+  }
+
+  tb.innerHTML=sched.map((it,i)=>{
+    const rowDrag=allMode?'':` draggable="true" data-idx="${i}" ondragstart="dragStart(event,${i})" ondragover="dragOver(event,${i})" ondrop="drop(event,${i})" ondragleave="dragLeave(event)"`;
+    const statusCls=STATUS_CLS[it.status||'Not Started']||'st-ns';
+    return`
+    <tr${rowDrag}>
+      ${allMode?'':`<td class="no-print"><div class="drag-handle">⠿</div></td>`}
       <td style="text-align:center;color:#94a3b8;font-size:11px">${i+1}</td>
-      <td><input class="ei ei-mono" value="${esc(it.erp)}" onchange="upd(${it.id},'erp',this.value)"></td>
-      <td><input class="ei" value="${esc(it.desc)}" onchange="upd(${it.id},'desc',this.value)"></td>
-      <td><input class="ei ei-mono" value="${esc(it.pn)}" onchange="upd(${it.id},'pn',this.value)"></td>
-      <td><input class="ei ei-c" type="number" min="0" style="width:100%;min-width:44px" value="${it.qty}" onchange="upd(${it.id},'qty',this.value)"></td>
-      <td><input class="ei ei-c" type="number" min="0" step="0.5" value="${it.hrs}" onchange="upd(${it.id},'hrs',this.value)"></td>
-      <td>${buildCombo(it.id,it.machine||'M1000')}</td>
-      ${showPrio?`<td><select class="ei" onchange="upd(${it.id},'priority',this.value)">
-        ${[1,2,3,4].map(p=>`<option value="${p}"${it.priority==p?' selected':''}>${PRIO_LABELS[p]}</option>`).join('')}
-      </select></td>`:''}
+      ${groupCol?`<td>${groupLabel(it)}</td>`:''}
+      <td>${allMode?`<span class="ei ei-mono" style="display:block;padding:4px 6px;font-size:10px;font-family:monospace">${esc(it.erp)}</span>`:`<input class="ei ei-mono" value="${esc(it.erp)}" onchange="upd(${it.id},'erp',this.value)">`}</td>
+      <td>${allMode?`<span class="ei" style="display:block;padding:4px 6px">${esc(it.desc)}</span>`:`<input class="ei" value="${esc(it.desc)}" onchange="upd(${it.id},'desc',this.value)">`}</td>
+      <td>${allMode?`<span class="ei ei-mono" style="display:block;padding:4px 6px;font-size:10px;font-family:monospace">${esc(it.pn)}</span>`:`<input class="ei ei-mono" value="${esc(it.pn)}" onchange="upd(${it.id},'pn',this.value)">`}</td>
+      <td style="text-align:center">${it.qty}</td>
+      <td style="text-align:center">${it.hrs}</td>
+      <td><span style="font-size:11px;font-weight:600;color:#185FA5">${esc(it.machine||'—')}</span></td>
+      ${showPrio?`<td><span class="prio ${PRIO_CLS[it.priority]||'p3'}">${PRIO_LABELS[it.priority]||'—'}</span></td>`:''}
       <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">${fmtShort(it.start)}</td>
       <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">${fmtShort(it.end)}</td>
       <td style="text-align:center;font-size:12px;font-weight:700;color:#0d1b4b">${it.wdays||'—'}</td>
-      <td>${statusSelect(it.id,it.status||'Not Started')}</td>
-      <td class="no-print"><button class="del-btn" onclick="delItem(${it.id})">×</button></td>
-    </tr>`).join('');
+      <td><span class="status-sel ${statusCls}" style="display:block;text-align:center;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:600">${esc(it.status||'Not Started')}</span></td>
+      ${allMode?'':`<td class="no-print"><button class="del-btn" onclick="delItem(${it.id})">×</button></td>`}
+    </tr>`;
+  }).join('');
 }
 
 /* ══════════════════════════════════════════
@@ -691,8 +1076,10 @@ function renderTable(sched){
 ══════════════════════════════════════════ */
 function renderGantt(sched){
   const g=document.getElementById('gantt');
-  const base=getBase();
   const valid=sched.filter(x=>x.start&&x.end);
+  // Determine base: in all-mode use earliest start; otherwise use plan start
+  let base=isAllMode()?null:getBase();
+  if(!base&&valid.length) base=new Date(Math.min(...valid.map(x=>x.start.getTime())));
   if(!base||!valid.length){
     g.innerHTML=`<div style="padding:2rem;text-align:center;font-size:12px;color:#94a3b8">Set a start date to see the Gantt chart</div>`;
     document.getElementById('ganttLegend').innerHTML='';return;
@@ -841,13 +1228,13 @@ function renderMachineView(sched){
    LIVE INPUTS
 ══════════════════════════════════════════ */
 document.getElementById('startDate').addEventListener('change',function(){
-  const pl=getPlan();if(!pl)return;pl.startDate=this.value;render();
+  const pl=getPlan();if(!pl)return;pl.startDate=this.value;markUnsaved();render();
 });
 document.getElementById('planName').addEventListener('input',function(){
-  const pl=getPlan();if(!pl)return;pl.name=this.value;renderPlanTabs();
+  const pl=getPlan();if(!pl)return;pl.name=this.value;markUnsaved();renderPlanTabs();
 });
 document.getElementById('mainTitle').addEventListener('input',function(){
-  // just let user type — no full render needed
+  markUnsaved();
 });
 
 // close any open combo on outside click
@@ -857,9 +1244,25 @@ document.addEventListener('click',function(e){
   }
 });
 
-// init
+// Warn before leaving with unsaved changes
+window.addEventListener('beforeunload',function(e){
+  if(_unsavedChanges){
+    e.preventDefault();
+    e.returnValue='You have unsaved changes. Leave anyway?';
+  }
+});
+
+// Ctrl+S / Cmd+S shortcut
+document.addEventListener('keydown',function(e){
+  if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveData();}
+});
+
+// init — load saved data if available, then render
+const hadSaved=loadData();
 setView('table');
 render();
+if(!hadSaved) markUnsaved(); // fresh file, prompt user to save
 </script>
-</body>
-</html>
+
+
+</body></html>
