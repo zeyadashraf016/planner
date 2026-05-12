@@ -677,8 +677,14 @@ function computeSchedForPlan(pl){
       while(isWE(mCursor[m]))mCursor[m].setDate(mCursor[m].getDate()+1);
       mHours[m]=8;
     }
+    const hrs=Number(it.hrs)||0;
+    if(hrs===0){
+      // zero-hour item: assign to current cursor day, consume nothing
+      const d=cloneDay(mCursor[m]);
+      return{...it,start:d,end:d,wdays:0,_planName:pl.name};
+    }
     const startDay=cloneDay(mCursor[m]);
-    let rem=Math.max(it.hrs,0.0001);
+    let rem=hrs;
     while(rem>0){
       const consume=Math.min(rem,mHours[m]);
       rem-=consume; mHours[m]-=consume;
@@ -689,7 +695,8 @@ function computeSchedForPlan(pl){
       }
     }
     const endDay=cloneDay(mCursor[m]);
-    return{...it,start:startDay,end:endDay,wdays:countWD(startDay,endDay),_planName:pl.name};
+    const wd=countWD(startDay,endDay);
+    return{...it,start:startDay,end:endDay,wdays:wd,_planName:pl.name};
   });
 }
 
@@ -1050,22 +1057,24 @@ function renderTable(sched){
   tb.innerHTML=sched.map((it,i)=>{
     const rowDrag=allMode?'':` draggable="true" data-idx="${i}" ondragstart="dragStart(event,${i})" ondragover="dragOver(event,${i})" ondrop="drop(event,${i})" ondragleave="dragLeave(event)"`;
     const statusCls=STATUS_CLS[it.status||'Not Started']||'st-ns';
+    // read-only cell helper (used in all-mode)
+    const ro=(val,cls)=>`<span class="${cls||'ei'}" style="display:block;padding:4px 6px;background:#f8fafc;border:1px solid #f0f3f8;border-radius:5px;font-size:${cls&&cls.includes('mono')?'10px':'11px'};${cls&&cls.includes('mono')?'font-family:monospace;':''}">${esc(String(val??''))}</span>`;
     return`
     <tr${rowDrag}>
       ${allMode?'':`<td class="no-print"><div class="drag-handle">⠿</div></td>`}
       <td style="text-align:center;color:#94a3b8;font-size:11px">${i+1}</td>
       ${groupCol?`<td>${groupLabel(it)}</td>`:''}
-      <td>${allMode?`<span class="ei ei-mono" style="display:block;padding:4px 6px;font-size:10px;font-family:monospace">${esc(it.erp)}</span>`:`<input class="ei ei-mono" value="${esc(it.erp)}" onchange="upd(${it.id},'erp',this.value)">`}</td>
-      <td>${allMode?`<span class="ei" style="display:block;padding:4px 6px">${esc(it.desc)}</span>`:`<input class="ei" value="${esc(it.desc)}" onchange="upd(${it.id},'desc',this.value)">`}</td>
-      <td>${allMode?`<span class="ei ei-mono" style="display:block;padding:4px 6px;font-size:10px;font-family:monospace">${esc(it.pn)}</span>`:`<input class="ei ei-mono" value="${esc(it.pn)}" onchange="upd(${it.id},'pn',this.value)">`}</td>
-      <td style="text-align:center">${it.qty}</td>
-      <td style="text-align:center">${it.hrs}</td>
-      <td><span style="font-size:11px;font-weight:600;color:#185FA5">${esc(it.machine||'—')}</span></td>
-      ${showPrio?`<td><span class="prio ${PRIO_CLS[it.priority]||'p3'}">${PRIO_LABELS[it.priority]||'—'}</span></td>`:''}
+      <td>${allMode?ro(it.erp,'ei ei-mono'):`<input class="ei ei-mono" value="${esc(it.erp)}" onchange="upd(${it.id},'erp',this.value)">`}</td>
+      <td>${allMode?ro(it.desc,'ei'):`<input class="ei" value="${esc(it.desc)}" onchange="upd(${it.id},'desc',this.value)">`}</td>
+      <td>${allMode?ro(it.pn,'ei ei-mono'):`<input class="ei ei-mono" value="${esc(it.pn)}" onchange="upd(${it.id},'pn',this.value)">`}</td>
+      <td>${allMode?ro(it.qty):`<input class="ei ei-c" type="number" min="0" style="width:100%;min-width:44px" value="${it.qty}" onchange="upd(${it.id},'qty',this.value)">`}</td>
+      <td>${allMode?ro(it.hrs):`<input class="ei ei-c" type="number" min="0" step="0.5" value="${it.hrs}" onchange="upd(${it.id},'hrs',this.value)">`}</td>
+      <td>${allMode?`<span style="font-size:11px;font-weight:600;color:#185FA5;display:block;padding:2px 4px">${esc(it.machine||'—')}</span>`:buildCombo(it.id,it.machine||'M1000')}</td>
+      ${showPrio?(allMode?`<td><span class="prio ${PRIO_CLS[it.priority]||'p3'}">${PRIO_LABELS[it.priority]||'—'}</span></td>`:`<td><select class="ei" onchange="upd(${it.id},'priority',this.value)">${[1,2,3,4].map(p=>`<option value="${p}"${it.priority==p?' selected':''}>${PRIO_LABELS[p]}</option>`).join('')}</select></td>`):''}
       <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">${fmtShort(it.start)}</td>
       <td style="white-space:nowrap;font-size:11px;color:#475569;text-align:center">${fmtShort(it.end)}</td>
       <td style="text-align:center;font-size:12px;font-weight:700;color:#0d1b4b">${it.wdays||'—'}</td>
-      <td><span class="status-sel ${statusCls}" style="display:block;text-align:center;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:600">${esc(it.status||'Not Started')}</span></td>
+      <td>${allMode?`<span class="status-sel ${statusCls}" style="display:block;text-align:center;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:600">${esc(it.status||'Not Started')}</span>`:statusSelect(it.id,it.status||'Not Started')}</td>
       ${allMode?'':`<td class="no-print"><button class="del-btn" onclick="delItem(${it.id})">×</button></td>`}
     </tr>`;
   }).join('');
